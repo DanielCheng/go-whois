@@ -11,16 +11,17 @@ import (
 )
 
 var Parsers = map[string]Parser{
-	"whois.apnic.net": &RPSL{},
+	"whois.apnic.net":  &RPSL{},
 	"whois.arin.net":   &RPSL{},
 	"whois.iana.org":   &RPSL{},
 	"whois.lacnic.net": &RPSL{},
 	"whois.ripe.net":   &RPSL{},
+	"whois.cymru.com":  &CYMRU{},
 }
 
 // Lookup ip on IANA, then on `refer`
 func Lookup(query string) (*Record, error) {
-	record, err := lookup(query, "whois.iana.org")
+	record, err := lookup(query, "whois.cymru.com")
 	if err != nil {
 		return nil, err
 	}
@@ -86,4 +87,32 @@ func (_ RPSL) Get(rd io.Reader, key string) string {
 			return strings.Trim(ms[1], "\r")
 		}
 	}
+}
+
+type CYMRU struct{}
+
+func (_ CYMRU) Get(rd io.Reader, key string) string {
+	buf := bufio.NewReader(rd)
+	kv := map[string]string{}
+
+	kl, err := buf.ReadString('\n')
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return ""
+	}
+	vl, err := buf.ReadString('\n')
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return ""
+	}
+
+	ks := strings.Split(string(kl), "|")
+	vs := strings.Split(string(vl), "|")
+
+	for i, k := range ks {
+		_k := strings.TrimSpace(k)
+		_v := strings.TrimSpace(vs[i])
+		kv[_k] = _v
+	}
+	return kv[key]
 }
