@@ -44,6 +44,9 @@ func lookup(query, host string) (*Record, error) {
 		return nil, err
 	}
 
+	// make it in verbose mode
+	query = " -v " + query
+
 	if _, err := conn.Write(append([]byte(query), '\r', '\n')); err != nil {
 		return nil, err
 	}
